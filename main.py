@@ -1,7 +1,8 @@
 import database_operations as dbo
 import XMLStats
 import pandas as pd
-
+import logging as log
+import argparse
 
 class XMLStats():
     def __init__(self, sport, start_date, end_date):
@@ -136,6 +137,22 @@ class MLB(XMLStats):
         dbo.execute_query(self.conn,query,data,False)
         return
 
+
+def init_logging(sport):
+    # init logging
+    logname = sport + '-' + datetime.datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
+    logpath = os.path.join(os.getcwd(), '/logs')
+
+    log.getLogger("requests").setLevel(log.WARNING)
+    log.getLogger("urllib3").setLevel(log.WARNING)
+
+    filename = os.path.join(logpath,logname+".txt")
+
+    log.basicConfig(
+        format='%(asctime)s  - %(module)s - %(levelname)s - %(message)s',
+        level=log.INFO, #.DEBUG # Change debug level to choose how verbose you want logging to be
+        filename=filename)
+    return filename
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='XMLStats Data Retrieval and Storage')
