@@ -4,7 +4,7 @@ import pandas as pd
 import logging as log
 import argparse
 
-class XMLStats():
+class Sport():
     def __init__(self, sport, start_date, end_date, historize = True):
         """
         sport - 'NBA' or 'MLB'
@@ -19,7 +19,9 @@ class XMLStats():
         self.conn = dbo.db_connect()
 
     def get_events(self,date):
-        data = XMLStats.main(self.sport,'events',{'sport':self.sport,'date':date})
+        print (self.sport,date)
+        params = {'sport':self.sport,'date':date}
+        data = XMLStats.main(self.sport,'events',params)
         if data['event']:
             event_ids = [event['event_id'] for event in data['event']]
             return event_ids
@@ -41,14 +43,14 @@ class XMLStats():
 
 
 
-class NBA(XMLStats):
+class NBA(Sport):
     def __init__(self, sport, start_date, end_date):
         """
         sport - 'NBA' or 'MLB'
         start_date/end_date - 'YYYY-MM-DD'
         historize - TRUE or FALSE
         """
-        XMLStats.__init__(self, sport, start_date, end_date)
+        Sport.__init__(self, sport, start_date, end_date)
         self.team_stats = ['three_point_field_goals_attempted','three_point_field_goals_made',
                             'field_goals_attempted','field_goals_made','free_throws_attempted',
                             'free_throws_made','assists','blocks','personal_fouls','offensive_rebounds',
@@ -111,14 +113,14 @@ class NBA(XMLStats):
         return
 
 
-class MLB(XMLStats):
+class MLB(Sport):
     def __init__(self, sport, start_date, end_date, historize):
         """
         sport - 'NBA' or 'MLB'
         start_date/end_date - 'YYYY-MM-DD'
         historize - TRUE or FALSE
         """
-        XMLStats.__init__(self, sport, start_date, end_date, historize)
+        Sport.__init__(self, sport, start_date, end_date, historize)
         self.team_stats = []
 
         self.player_stats = []
