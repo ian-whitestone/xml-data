@@ -25,7 +25,7 @@ def csv_writer(data, path):
 def ConfigSectionMap(section):
     Config = configparser.ConfigParser()
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    config_path = dir_path.split('nba-data')[0] + 'db.ini'
+    config_path = dir_path.split('xml_data')[0] + 'db.ini'
     Config.read(config_path)
     dict1 = {}
     options = Config.options(section)
