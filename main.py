@@ -5,7 +5,7 @@ import logging as log
 import argparse
 
 class XMLStats():
-    def __init__(self, sport, start_date, end_date):
+    def __init__(self, sport, start_date, end_date, historize = True):
         """
         sport - 'NBA' or 'MLB'
         start_date/end_date - 'YYYY-MM-DD'
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     parser.add_argument('--end_date', default='2012-01-01', help='Ending date for data')
 
     args = parser.parse_args()
-    
+
     if args.sport =='NBA':
         sport = NBA('NBA',args.start_date,args.end_date)
     else:
