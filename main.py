@@ -1,9 +1,11 @@
 import database_operations as dbo
 import XMLStats
+
 import pandas as pd
 import logging as log
 import argparse
 import datetime
+import os
 
 class Sport():
     def __init__(self, sport, start_date, end_date, historize = True):
@@ -20,17 +22,23 @@ class Sport():
         self.conn = dbo.db_connect()
 
     def get_events(self,date):
+        log.info("checking for events on %s" % date)
         data = XMLStats.main(self.sport,'events',{'sport':self.sport,'date':date})
         if data['event']:
             event_ids = [event['event_id'] for event in data['event']]
             return event_ids
+        else:
+            log.warning("no events on %s" % date)
         return
 
     def boxscore(self,gameid):
+        log.info("pulling game data for gameid: %s" % gameid)
         game_data = XMLStats.main(self.sport.lower(),'boxscore',None,gameid)
         if game_data:
             self.parse_event_data(gameid,game_data)
             self.parse_player_data(gameid,game_data)
+        else:
+            log.warning("no game data for gameid: %s" % gameid)
         return
 
     def main(self):
@@ -61,6 +69,7 @@ class NBA(Sport):
                             'offensive_rebounds','defensive_rebounds','steals','turnovers']
 
     def parse_player_data(self,gameid,game_data):
+        log.info("parsing player data for gameid: %s" % gameid)
         opp_dict = {game_data['away_team']["abbreviation"]:game_data['home_team']["abbreviation"],
                     game_data['home_team']["abbreviation"]:game_data['away_team']["abbreviation"]}
 
@@ -79,12 +88,12 @@ class NBA(Sport):
         dbo.execute_query(self.conn,query,(gameid,))
 
         query = "INSERT INTO player_data VALUES (" + '%s,'*21 + "%s)"
-        dbo.execute_query(self.conn,query,away_stats+home_stats,True)
+        dbo.execute_query(self.conn,query,away_data+home_data,True)
         return
 
 
     def parse_event_data(self,gameid,game_data):
-        print (game_data)
+        log.info("parsing event data for gameid: %s" % gameid)
         officials = [o['first_name'] + ' ' + o['last_name'] for o in game_data['officials']]
         if len(officials)<4:
             officials += [None]
@@ -97,10 +106,10 @@ class NBA(Sport):
         home_stats = [game_data['home_totals'][stat] for stat in self.team_stats]
         home_scores = game_data['home_period_scores'] + [None,None,None,None]
 
-        start_time = datetime.datetime.strptime(game_data['start_date_time'][:-6],'%Y-%m-%dT%H:%M:%S')
+        start_time = datetime.datetime.strptime(game_data['event_information']['start_date_time'][:-6],'%Y-%m-%dT%H:%M:%S')
 
         data = (gameid,game_data['home_team']['abbreviation'],game_data['away_team']['abbreviation'],
-                game_data['attendance']) + tuple(officials) + (game_data['season_type'],
+                game_data['event_information']['attendance']) + tuple(officials) + (game_data['event_information']['season_type'],
                 sum(game_data['home_period_scores']),sum(game_data['away_period_scores']),duration) + \
                 tuple(away_stats) + tuple(away_scores[0:8]) + tuple(home_stats) + tuple(home_scores[0:8]) + \
                 (start_time.date(),start_time)
@@ -108,7 +117,7 @@ class NBA(Sport):
         query = "DELETE FROM event_data WHERE gameid=%s"
         dbo.execute_query(self.conn,query,(gameid,))
 
-        query = "INSERT INTO event_data VALUES(" + "%s,"*56 + "%s)"
+        query = "INSERT INTO event_data VALUES(" + "%s,"*55 + "%s)"
         dbo.execute_query(self.conn,query,data,False)
         return
 
@@ -143,7 +152,7 @@ class MLB(Sport):
 def init_logging(sport):
     # init logging
     logname = sport + '-' + datetime.datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
-    logpath = os.path.join(os.getcwd(), '/logs')
+    logpath = os.path.join(os.getcwd(), './logs')
 
     log.getLogger("requests").setLevel(log.WARNING)
     log.getLogger("urllib3").setLevel(log.WARNING)
@@ -163,7 +172,19 @@ if __name__ == '__main__':
     parser.add_argument('--end_date', default='2012-01-01', help='Ending date for data')
 
     args = parser.parse_args()
+    init_logging(args.sport)
 
+    log.info("##############################################################")
+    log.info("##################  RUNNING XML STATS ETL ####################")
+    log.info("##############################################################")
+    log.info('\n\n')
+    log.info(datetime.datetime.now())
+    log.info("Scraping %s for %s to %s" % (args.sport,args.start_date,args.end_date))
+    log.info('\n\n')
+    log.info("##############################################################")
+    log.info("##############################################################")
+    log.info('\n\n')
+    
     if args.sport =='NBA':
         sport = NBA('NBA',args.start_date,args.end_date)
     else:

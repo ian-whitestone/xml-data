@@ -25,7 +25,6 @@ CREATE TABLE player_data
     PRIMARY KEY (gameid,player,team)
   );
 
-
 CREATE TABLE event_data
   (
     gameid varchar(150),

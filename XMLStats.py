@@ -9,12 +9,11 @@ import json
 from datetime import datetime
 from datetime import timedelta
 import dateutil.parser
-# import socket
-# import ssl
 import time
 import os
 import general_utils as Ugen
 import io
+import logging as log
 
 # https://github.com/xmlstats/example-python/blob/master/roster.py
 
@@ -43,8 +42,7 @@ def main(sport,method,parameters,game_id=False):
     data, xmlstats_remaining, xmlstats_reset=http_get(url)
     if xmlstats_remaining == 0:
         delta = (datetime.fromtimestamp(xmlstats_reset) - datetime.now()).total_seconds()
-        print('Reached rate limit. Waiting {} seconds to make new '
-              'request...'.format(int(delta)))
+        log.info('Reached rate limit. Waiting {} seconds to make new request...'.format(int(delta)))
         time.sleep(delta+1)
 
     if data:
@@ -74,10 +72,10 @@ def http_get(url):
             reason = data['error']['description']
         else:
             reason = err.read()
-        print('Server returned {} error code!\n{}'.format(err.code, reason))
+        log.warning('Server returned {} error code!\n{}'.format(err.code, reason))
         return False,1,False
     except urllib.error.URLError as err:
-        print('Error retrieving file: {}'.format(err.reason))
+        log.warning('Error retrieving file: {}'.format(err.reason))
         return False,1,False
 
     data = None
@@ -98,7 +96,7 @@ def http_get(url):
 def build_url(host, sport, method, data_format, parameters, game_id = False):
     path = "/".join(filter(None, (sport, method, game_id)));
     url = "https://" + host + "/" + path + "." + data_format
-    print (url)
+
     if parameters:
         paramstring = urllib.parse.urlencode(parameters)
         url = url + "?" + paramstring
