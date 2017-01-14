@@ -3,6 +3,7 @@ import XMLStats
 import pandas as pd
 import logging as log
 import argparse
+import datetime
 
 class Sport():
     def __init__(self, sport, start_date, end_date, historize = True):
@@ -19,9 +20,7 @@ class Sport():
         self.conn = dbo.db_connect()
 
     def get_events(self,date):
-        print (self.sport,date)
-        params = {'sport':self.sport,'date':date}
-        data = XMLStats.main(self.sport,'events',params)
+        data = XMLStats.main(self.sport,'events',{'sport':self.sport,'date':date})
         if data['event']:
             event_ids = [event['event_id'] for event in data['event']]
             return event_ids
@@ -65,7 +64,7 @@ class NBA(Sport):
         opp_dict = {game_data['away_team']["abbreviation"]:game_data['home_team']["abbreviation"],
                     game_data['home_team']["abbreviation"]:game_data['away_team']["abbreviation"]}
 
-        start_time = datetime.datetime.strptime(game_data['start_date_time'][:-6],'%Y-%m-%dT%H:%M:%S')
+        start_time = datetime.datetime.strptime(game_data['event_information']['start_date_time'][:-6],'%Y-%m-%dT%H:%M:%S')
 
 
         away_data = [(gameid,p['team_abbreviation'],opp_dict[p['team_abbreviation']],p['position'],
@@ -76,8 +75,8 @@ class NBA(Sport):
                         p['display_name']) + tuple([p[stat] for stat in self.player_stats]) + \
                         ((1 if p['is_starter'] else 0),start_time.date()) for p in game_data['home_stats']]
 
-        query = "DELETE FROM player_data WHERE date=%s"
-        dbo.execute_query(self.conn,query,(start_time.date(),))
+        query = "DELETE FROM player_data WHERE gameid=%s"
+        dbo.execute_query(self.conn,query,(gameid,))
 
         query = "INSERT INTO player_data VALUES (" + '%s,'*21 + "%s)"
         dbo.execute_query(self.conn,query,away_stats+home_stats,True)
@@ -85,11 +84,12 @@ class NBA(Sport):
 
 
     def parse_event_data(self,gameid,game_data):
+        print (game_data)
         officials = [o['first_name'] + ' ' + o['last_name'] for o in game_data['officials']]
         if len(officials)<4:
-            officials += None
+            officials += [None]
 
-        duration = int(game_data['duration'][0])*60 + int(game_data['duration'][2:4])
+        duration = int(game_data['event_information']['duration'][0])*60 + int(game_data['event_information']['duration'][2:4])
 
         away_stats = [game_data['away_totals'][stat] for stat in self.team_stats]
         away_scores = game_data['away_period_scores'] + [None,None,None,None]
@@ -105,8 +105,8 @@ class NBA(Sport):
                 tuple(away_stats) + tuple(away_scores[0:8]) + tuple(home_stats) + tuple(home_scores[0:8]) + \
                 (start_time.date(),start_time)
 
-        query = "DELETE FROM event_data WHERE date=%s"
-        dbo.execute_query(self.conn,query,(start_time.date(),))
+        query = "DELETE FROM event_data WHERE gameid=%s"
+        dbo.execute_query(self.conn,query,(gameid,))
 
         query = "INSERT INTO event_data VALUES(" + "%s,"*56 + "%s)"
         dbo.execute_query(self.conn,query,data,False)
