@@ -150,7 +150,7 @@ def init_logging(sport):
 
     log.basicConfig(
         format='%(asctime)s  - %(module)s - %(levelname)s - %(message)s',
-        level=log.INFO, #.DEBUG # Change debug level to choose how verbose you want logging to be
+        level=log.DEBUG, #.DEBUG # Change debug level to choose how verbose you want logging to be
         filename=filename)
     return filename
 
@@ -160,6 +160,8 @@ if __name__ == '__main__':
     parser.add_argument('--start_date', default='2012-01-01', help='Starting date for data')
     parser.add_argument('--end_date', default='2012-01-01', help='Ending date for data')
 
+    args = parser.parse_args()
+    
     if args.sport =='NBA':
         sport = NBA('NBA',args.start_date,args.end_date)
     else:
