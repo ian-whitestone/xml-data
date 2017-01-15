@@ -44,8 +44,9 @@ class Sport():
     def main(self):
         for date in [d.strftime('%Y-%m-%d') for d in pd.date_range(self.start_date, self.end_date)]:
             event_ids = self.get_events(date)
-            for gameid in event_ids:
-                self.boxscore(gameid)
+            if event_ids:
+                for gameid in event_ids:
+                    self.boxscore(gameid)
         return
 
 
@@ -168,8 +169,8 @@ def init_logging(sport):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='XMLStats Data Retrieval and Storage')
     parser.add_argument('sport', default='NBA', help='Sport to run get data for -- NBA or MLB')
-    parser.add_argument('--start_date', default='2012-01-01', help='Starting date for data')
-    parser.add_argument('--end_date', default='2012-01-01', help='Ending date for data')
+    parser.add_argument('--start', default='2012-01-01', help='Starting date for data')
+    parser.add_argument('--end', default='2012-01-01', help='Ending date for data')
 
     args = parser.parse_args()
     init_logging(args.sport)
@@ -179,15 +180,15 @@ if __name__ == '__main__':
     log.info("##############################################################")
     log.info('\n\n')
     log.info(datetime.datetime.now())
-    log.info("Scraping %s for %s to %s" % (args.sport,args.start_date,args.end_date))
+    log.info("Scraping %s for %s to %s" % (args.sport,args.start,args.end))
     log.info('\n\n')
     log.info("##############################################################")
     log.info("##############################################################")
     log.info('\n\n')
-    
+
     if args.sport =='NBA':
-        sport = NBA('NBA',args.start_date,args.end_date)
+        sport = NBA('NBA',args.start,args.end)
     else:
-        sport = MLB('MLB',args.start_date,args.end_date)
+        sport = MLB('MLB',args.start,args.end)
 
     sport.main()
